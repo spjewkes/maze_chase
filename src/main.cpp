@@ -2,7 +2,7 @@
 
 int main()
 {
-	GameMazeChase game(800, 600);
+	GameMazeChase game(608, 672);
 	game.start();
 
     return 0;

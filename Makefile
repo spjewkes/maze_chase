@@ -16,10 +16,7 @@ OS := $(shell uname)
 
 ifeq ($(OS),Darwin)
 # Mac OS
-	LIBS+=-framework SDL2
-else
-# Assume Linux for now
-	LIBS+=-lSDL2
+	LIBS+=-lSDL2 -lSDL2_image
 endif
 
 default: debug
