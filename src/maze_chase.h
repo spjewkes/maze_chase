@@ -39,10 +39,6 @@ public:
 			maze += "#                 #";
 			maze += "###################";
 
-			/* tex_wall = loadTexture("res/wall.png"); */
-			/* tex_floor = loadTexture("res/floor.png"); */
-			/* tex_man = loadTexture("res/man.png"); */
-
 			SDL_Renderer *renderer = get_renderer();
 			tex_wall = IMG_LoadTexture(renderer, "res/wall.png");
 			tex_floor = IMG_LoadTexture(renderer, "res/floor.png");
@@ -53,21 +49,63 @@ public:
 
 	virtual bool OnUpdate(float elapsed_time)
 		{
-			const Uint8 *state = SDL_GetKeyboardState(NULL);
 			SDL_Renderer *renderer = get_renderer();
+			SDL_Rect src = { 0, 0, 16, 16 };
 
+			// Sort out player movement
+			const Uint8 *state = SDL_GetKeyboardState(NULL);
+			if (state[SDL_SCANCODE_LEFT])
+			{
+				man_vx = -1.0f;
+			}
+			if (state[SDL_SCANCODE_RIGHT])
+			{
+				man_vx = 1.0f;
+			}
+			if (state[SDL_SCANCODE_UP])
+			{
+				man_vy = -1.0f;
+			}
+			if (state[SDL_SCANCODE_DOWN])
+			{
+				man_vy = 1.0f;
+			}
+
+			float new_man_x = man_x + man_vx * elapsed_time;
+			float new_man_y = man_y + man_vy * elapsed_time;
+
+			// Check four corners of player for collision
+			if (get_map(new_man_x, new_man_y) == ' ' &&
+				get_map(new_man_x + 0.99f, new_man_y) == ' ' &&
+				get_map(new_man_x, new_man_y + 0.99f) == ' ' &&
+				get_map(new_man_x + 0.99f, new_man_y + 0.99f) == ' ')
+			{
+				man_x = new_man_x;
+				man_y = new_man_y;
+			}
+			else
+			{
+				// This isn't ideal and need fixing as it'll just stop the player dead
+				man_vx = 0.0f;
+				man_vy = 0.0f;
+			}
+
+			// Draw the maze
 			for (int y=0; y<maze_height; y++)
 			{
 				for (int x=0; x<maze_width; x++)
 				{
-					SDL_Rect src = { 0, 0, 16, 16 };
 					SDL_Rect dst = { x*32, y*32, 32, 32 };
-					if (maze[y * maze_width + x] == '#')
+					if (get_map(x, y) == '#')
 						SDL_RenderCopy(renderer, tex_wall, &src, &dst);
 					else
 						SDL_RenderCopy(renderer, tex_floor, &src, &dst);
 				}
 			}
+
+			// Draw the man
+			SDL_Rect dst_man = { static_cast<int>(man_x * 32), static_cast<int>(man_y * 32), 32, 32 };
+			SDL_RenderCopy(renderer, tex_man, &src, &dst_man);
 
 			SDL_RenderPresent(renderer);
 			return true;
@@ -78,28 +116,23 @@ public:
 	}
 
 private:
-	SDL_Texture* loadTexture(const char *filename)
+	const char get_map(float x, float y) const
 	{
-			SDL_Renderer *renderer = get_renderer();
-			SDL_Surface *surf = IMG_Load(filename);
-			if (!surf)
-			{
-				cerr << "Failed to load image: " << filename << " : " <<  IMG_GetError() << endl;
-				return NULL;
-			}
-			SDL_Texture *tex = SDL_CreateTextureFromSurface(renderer, surf);
-			if (!tex)
-			{
-				cerr << "Failed to create texture from surface: " << filename << " : " <<  SDL_GetError() << endl;
-				return NULL;
-			}
-			SDL_FreeSurface(surf);
-			return tex;
+		return get_map(static_cast<int>(x), static_cast<int>(y));
+	}
+	const char get_map(int x, int y) const
+	{
+		return maze[y * maze_width + x];
 	}
 
 	string maze;
 	int maze_height = 21;
 	int maze_width = 19;
+
+	float man_x = 9.0f;
+	float man_y = 11.0f;
+	float man_vx = 0.0f;
+	float man_vy = 0.0f;
 
 	SDL_Texture *tex_wall;
 	SDL_Texture *tex_floor;
