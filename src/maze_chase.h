@@ -54,38 +54,30 @@ public:
 
 			// Sort out player movement
 			const Uint8 *state = SDL_GetKeyboardState(NULL);
-			if (state[SDL_SCANCODE_LEFT])
+			if (state[SDL_SCANCODE_LEFT] && !check_move(-1.0f, man_vy, elapsed_time))
 			{
-				man_vx = -1.0f;
+				man_vx = -2.0f;
 			}
-			if (state[SDL_SCANCODE_RIGHT])
+			if (state[SDL_SCANCODE_RIGHT] && !check_move(1.0f, man_vy, elapsed_time))
 			{
-				man_vx = 1.0f;
+				man_vx = 2.0f;
 			}
-			if (state[SDL_SCANCODE_UP])
+			if (state[SDL_SCANCODE_UP] && !check_move(man_vx, -1.0f, elapsed_time))
 			{
-				man_vy = -1.0f;
+				man_vy = -2.0f;
 			}
-			if (state[SDL_SCANCODE_DOWN])
+			if (state[SDL_SCANCODE_DOWN] && !check_move(man_vx, 1.0f, elapsed_time))
 			{
-				man_vy = 1.0f;
+				man_vy = 2.0f;
 			}
 
-			float new_man_x = man_x + man_vx * elapsed_time;
-			float new_man_y = man_y + man_vy * elapsed_time;
-
-			// Check four corners of player for collision
-			if (get_map(new_man_x, new_man_y) == ' ' &&
-				get_map(new_man_x + 0.99f, new_man_y) == ' ' &&
-				get_map(new_man_x, new_man_y + 0.99f) == ' ' &&
-				get_map(new_man_x + 0.99f, new_man_y + 0.99f) == ' ')
+			if (!check_move(man_vx, man_vy, elapsed_time))
 			{
-				man_x = new_man_x;
-				man_y = new_man_y;
+				man_x += man_vx * elapsed_time;
+				man_y += man_vy * elapsed_time;
 			}
 			else
 			{
-				// This isn't ideal and need fixing as it'll just stop the player dead
 				man_vx = 0.0f;
 				man_vy = 0.0f;
 			}
@@ -123,6 +115,25 @@ private:
 	const char get_map(int x, int y) const
 	{
 		return maze[y * maze_width + x];
+	}
+
+	bool check_move(float vx, float vy, float elapsed_time) const
+	{
+		bool collides = false;
+
+		float new_man_x = man_x + vx * elapsed_time;
+		float new_man_y = man_y + vy * elapsed_time;
+
+		// Check four corners of player for collision
+		if (get_map(new_man_x, new_man_y) != ' ' ||
+			get_map(new_man_x + 0.99f, new_man_y) != ' ' ||
+			get_map(new_man_x, new_man_y + 0.99f) != ' ' ||
+			get_map(new_man_x + 0.99f, new_man_y + 0.99f) != ' ')
+		{
+			collides = true;
+		}
+
+		return collides;
 	}
 
 	string maze;
